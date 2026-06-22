@@ -1,44 +1,73 @@
-#设置CMake最低支持版本
 cmake_minimum_required(VERSION 3.17)
 
-#引用ARMClang_Cortex-M4.cmake
-include(ARMClang_Cortex-M4.cmake)
+include(ARMClang_Cortex-M23.cmake)
 
-#关闭FPU
-CMSIS_EnableFPU(FALSE)
+project(GD32C231C8T6_Template C ASM)
 
-#设置Sections脚本路径
-CMSIS_SetSectionsScriptPath(${CMAKE_HOME_DIRECTORY}/GD32.sct)
-
-#配置交叉编译
-CMSIS_CrossCompilingConfiguration()
-
-#设置工程名
-project(EmbeddedProject_Demo C CXX ASM)
-
-#设置C标准版本
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
-#设置C++标准版本
-set(CMAKE_CXX_STANDARD 11)
+set(GD32C2X1_FIRMWARE_DIR
+        "${CMAKE_SOURCE_DIR}/Firmware"
+        CACHE PATH "Path to the extracted GD32C2x1_Firmware_Library package")
 
-#添加全局宏定义
-add_definitions(-DGD32F30X_HD -DUSE_STDPERIPH_DRIVER)
+set(GD32C2X1_CMSIS_CORE_DIR
+        "${GD32C2X1_FIRMWARE_DIR}/CMSIS/Core/Include")
+set(GD32C2X1_DEVICE_DIR
+        "${GD32C2X1_FIRMWARE_DIR}/CMSIS/GD/GD32C2x1")
+set(GD32C2X1_STDPERIPH_DIR
+        "${GD32C2X1_FIRMWARE_DIR}/GD32C2x1_standard_peripheral")
 
-#添加头文件引用目录
-include_directories(
-        CMSIS
-        System
-        Platform/Inc
-)
+set(GD32C2X1_STARTUP_FILE
+        "${GD32C2X1_DEVICE_DIR}/Source/ARM/startup_gd32c2x1.s")
+set(GD32C2X1_SYSTEM_FILE
+        "${GD32C2X1_DEVICE_DIR}/Source/system_gd32c2x1.c")
 
-#添加源文件
-file(GLOB_RECURSE SOURCES "Platform/Src/*.c" "System/*.*")
+foreach(required_path
+        "${GD32C2X1_CMSIS_CORE_DIR}"
+        "${GD32C2X1_DEVICE_DIR}/Include"
+        "${GD32C2X1_STDPERIPH_DIR}/Include"
+        "${GD32C2X1_STDPERIPH_DIR}/Source"
+        "${GD32C2X1_STARTUP_FILE}"
+        "${GD32C2X1_SYSTEM_FILE}")
+    if(NOT EXISTS "${required_path}")
+        message(FATAL_ERROR
+                "Missing GD32C2x1 firmware path: ${required_path}\n"
+                "Download GD32C2x1_Firmware_Library_V1.3.0 from GigaDevice, "
+                "then copy its Firmware directory to ${CMAKE_SOURCE_DIR}/Firmware.")
+    endif()
+endforeach()
 
-#添加生成可执行文件
-add_executable(EmbeddedProject_Demo
-        ${SOURCES}
-        main.c
-)
+file(GLOB_RECURSE GD32C2X1_STDPERIPH_SOURCES CONFIGURE_DEPENDS
+        "${GD32C2X1_STDPERIPH_DIR}/Source/*.c")
 
+add_executable(${PROJECT_NAME}
+        ${GD32C2X1_STARTUP_FILE}
+        ${GD32C2X1_SYSTEM_FILE}
+        ${GD32C2X1_STDPERIPH_SOURCES}
+        main.c)
 
+target_compile_definitions(${PROJECT_NAME} PRIVATE
+        GD32C231
+        USE_STDPERIPH_DRIVER)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+        "${GD32C2X1_CMSIS_CORE_DIR}"
+        "${GD32C2X1_DEVICE_DIR}/Include"
+        "${GD32C2X1_STDPERIPH_DIR}/Include")
+
+target_link_options(${PROJECT_NAME} PRIVATE
+        --cpu=Cortex-M23
+        --strict
+        --scatter "${CMAKE_SOURCE_DIR}/GD32.sct"
+        --summary_stderr
+        --info summarysizes
+        --map
+        --load_addr_map_info
+        --xref
+        --callgraph
+        --symbols
+        --info sizes
+        --info totals
+        --info unused
+        --info veneers)
