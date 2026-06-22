@@ -1,8 +1,9 @@
 cmake_minimum_required(VERSION 3.17)
+cmake_policy(SET CMP0123 NEW)
 
 include(ARMClang_Cortex-M23.cmake)
 
-project(GD32C231C8T6_Template C ASM)
+project(GD32C231C8T6_Cmake C ASM)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -12,14 +13,14 @@ set(GD32C2X1_FIRMWARE_DIR
         CACHE PATH "Path to the extracted GD32C2x1_Firmware_Library package")
 
 set(GD32C2X1_CMSIS_CORE_DIR
-        "${GD32C2X1_FIRMWARE_DIR}/CMSIS/Core/Include")
+        "${GD32C2X1_FIRMWARE_DIR}/CMSIS")
 set(GD32C2X1_DEVICE_DIR
         "${GD32C2X1_FIRMWARE_DIR}/CMSIS/GD/GD32C2x1")
 set(GD32C2X1_STDPERIPH_DIR
         "${GD32C2X1_FIRMWARE_DIR}/GD32C2x1_standard_peripheral")
 
 set(GD32C2X1_STARTUP_FILE
-        "${GD32C2X1_DEVICE_DIR}/Source/ARM/startup_gd32c2x1.s")
+        "${GD32C2X1_DEVICE_DIR}/Source/ARM/startup_gd32c231_221.s")
 set(GD32C2X1_SYSTEM_FILE
         "${GD32C2X1_DEVICE_DIR}/Source/system_gd32c2x1.c")
 
@@ -61,13 +62,21 @@ target_link_options(${PROJECT_NAME} PRIVATE
         --strict
         --scatter "${CMAKE_SOURCE_DIR}/GD32.sct"
         --summary_stderr
-        --info summarysizes
         --map
         --load_addr_map_info
         --xref
         --callgraph
         --symbols
-        --info sizes
-        --info totals
-        --info unused
-        --info veneers)
+        --info summarysizes,sizes,totals,unused,veneers)
+
+# ---------- Post-build: generate .bin and .hex from .elf ----------
+if(FROMELF_EXECUTABLE)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND "${FROMELF_EXECUTABLE}" --bin --output "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${PROJECT_NAME}.bin" "$<TARGET_FILE:${PROJECT_NAME}>"
+            COMMENT "Generating .bin file with fromelf")
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND "${FROMELF_EXECUTABLE}" --i32combined --output "$<TARGET_FILE_DIR:${PROJECT_NAME}>/${PROJECT_NAME}.hex" "$<TARGET_FILE:${PROJECT_NAME}>"
+            COMMENT "Generating .hex file with fromelf")
+else()
+    message(WARNING "fromelf not found – .bin/.hex will not be generated.")
+endif()
