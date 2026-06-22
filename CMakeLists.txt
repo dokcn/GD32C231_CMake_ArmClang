@@ -46,6 +46,7 @@ add_executable(${PROJECT_NAME}
         ${GD32C2X1_STARTUP_FILE}
         ${GD32C2X1_SYSTEM_FILE}
         ${GD32C2X1_STDPERIPH_SOURCES}
+        User/systick.c
         main.c)
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE
@@ -55,7 +56,8 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 target_include_directories(${PROJECT_NAME} PRIVATE
         "${GD32C2X1_CMSIS_CORE_DIR}"
         "${GD32C2X1_DEVICE_DIR}/Include"
-        "${GD32C2X1_STDPERIPH_DIR}/Include")
+        "${GD32C2X1_STDPERIPH_DIR}/Include"
+        "${CMAKE_SOURCE_DIR}/User")
 
 target_link_options(${PROJECT_NAME} PRIVATE
         --cpu=Cortex-M23
