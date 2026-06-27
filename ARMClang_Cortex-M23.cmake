@@ -36,7 +36,7 @@ set(CMAKE_C_COMPILER_WORKS TRUE)
 set(CMAKE_ASM_COMPILER_WORKS TRUE)
 
 set(CMAKE_C_FLAGS_INIT
-        "--target=arm-arm-none-eabi -mcpu=cortex-m23 -mfloat-abi=soft -ffunction-sections -fdata-sections -O1 -g"
+        "--target=arm-arm-none-eabi -mcpu=cortex-m23 -mfloat-abi=soft -ffunction-sections -fdata-sections -Os -g"
         CACHE STRING "Initial ARMClang C flags")
 set(CMAKE_ASM_FLAGS_INIT
         "--target=arm-arm-none-eabi -mcpu=cortex-m23 -mfloat-abi=soft -masm=auto -gdwarf-3"
